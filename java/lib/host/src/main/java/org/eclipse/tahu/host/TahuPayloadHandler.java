@@ -162,6 +162,8 @@ public class TahuPayloadHandler {
 	}
 
 	protected void handleNodeBirth(MessageContext messageContext) throws Exception {
+		logger.warn("<IAB> [+] handleNodeBirth() :: Processing NBIRTH from Edge Node {} with Seq# {}",
+				messageContext.getTopic().getEdgeNodeDescriptor(), messageContext.getSeqNum());
 		logger.debug("Processing NBIRTH from Edge Node {} with Seq# {}",
 				messageContext.getTopic().getEdgeNodeDescriptor(), messageContext.getSeqNum());
 		EdgeNodeDescriptor edgeNodeDescriptor = messageContext.getTopic().getEdgeNodeDescriptor();
@@ -180,6 +182,7 @@ public class TahuPayloadHandler {
 		hostApplicationMetricMap.clear(sparkplugEdgeNode.getEdgeNodeDescriptor());
 
 		// Set online
+		logger.warn("<IAB> handleNodeBirth() :: Setting {} ONLINE ...", sparkplugEdgeNode);
 		sparkplugEdgeNode.setOnline(true, messageContext.getPayload().getTimestamp(),
 				SparkplugUtil.getBdSequenceNumber(messageContext.getPayload()), messageContext.getSeqNum());
 
@@ -209,6 +212,7 @@ public class TahuPayloadHandler {
 			eventHandler.onBirthMetric(edgeNodeDescriptor, metric);
 		}
 		eventHandler.onNodeBirthComplete(edgeNodeDescriptor);
+		logger.warn("<IAB> [-] handleNodeBirth()");
 	}
 
 	protected void handleDeviceBirth(MessageContext messageContext) throws Exception {
@@ -323,6 +327,7 @@ public class TahuPayloadHandler {
 	}
 
 	protected void handleNodeDeath(MessageContext messageContext) {
+		logger.warn("<IAB> [+] handleNodeDeath()");
 		Long incomingBdSeqNum = -1L;
 		EdgeNodeDescriptor edgeNodeDescriptor = messageContext.getTopic().getEdgeNodeDescriptor();
 		try {
@@ -336,6 +341,7 @@ public class TahuPayloadHandler {
 						eventHandler.onNodeDeath(edgeNodeDescriptor, messageContext.getMessage());
 						eventHandler.onMessage(edgeNodeDescriptor, messageContext.getMessage());
 						staleTags(edgeNodeDescriptor, sparkplugEdgeNode);
+						logger.warn("<IAB> handleNodeDeath() :: Setting {} OFFLINE ...", sparkplugEdgeNode);
 						sparkplugEdgeNode.setOnline(false, messageContext.getPayload().getTimestamp(), incomingBdSeqNum,
 								null);
 						for (SparkplugDevice sparkplugDevice : sparkplugEdgeNode.getSparkplugDevices().values()) {
@@ -349,15 +355,16 @@ public class TahuPayloadHandler {
 								edgeNodeDescriptor, incomingBdSeqNum, birthBdSeqNum);
 					}
 				} else {
-					logger.error("Edge Node '{}' is not online - ignoring NDEATH", edgeNodeDescriptor);
+					logger.error("<IAB> [KEEP] :: Edge Node '{}' is not online - ignoring NDEATH", edgeNodeDescriptor);
 				}
 			} else {
-				logger.error("Unable to find Edge Node or current bdSeq number for NDEATH from {} - ignoring NDEATH",
+				logger.error("<IAB> [KEEP] :: Unable to find Edge Node or current bdSeq number for NDEATH from {} - ignoring NDEATH",
 						messageContext.getTopic().getEdgeNodeDescriptor());
 			}
 		} catch (Exception e) {
 			logger.error("Sparkplug BD sequence number from {} is missing - ignoring NDEATH", edgeNodeDescriptor);
 		}
+		logger.warn("<IAB> [-] handleNodeDeath()");
 	}
 
 	protected void handleDeviceDeath(MessageContext messageContext) throws TahuException {
